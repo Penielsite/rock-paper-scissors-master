@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1f3756" />
+    <link rel="icon" type="image/png" sizes="32x32" href="./images/favicon-32x32.png" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Rock, Paper, Scissors, Lizard, Spock</title>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
+    <script src="./game.js" defer></script>
+  </head>
+  <body>
+    <main class="game">
+      <header class="scoreboard" aria-label="Game score">
+        <img class="logo" src="./images/logo-bonus.svg" alt="Rock, Paper, Scissors, Lizard, Spock" />
+        <div class="score-card">
+          <span class="score-label" id="score-label">Score</span>
+          <output class="score-value" id="score" aria-live="polite">0</output>
+        </div>
+      </header>
+
+      <nav class="mode-switch" aria-label="Choose game mode">
+        <button class="mode-button is-active" type="button" data-mode="computer" aria-pressed="true">Vs Computer</button>
+        <button class="mode-button" type="button" data-mode="local" aria-pressed="false">2 Players Here</button>
+        <button class="mode-button" type="button" data-mode="online" aria-pressed="false">Online</button>
+      </nav>
+
+      <section class="online-panel" id="online-panel" aria-label="Online game setup" hidden>
+        <p class="online-help">Enter your name. The host must approve each player before the game starts.</p>
+        <div class="online-actions">
+          <label class="room-entry">
+            <span>Your name</span>
+            <input id="player-name" type="text" autocomplete="name" maxlength="24" placeholder="Enter your name" />
+          </label>
+          <button class="online-button" id="create-room" type="button">Create room</button>
+          <label class="room-entry">
+            <span>Room code</span>
+            <input id="room-code" type="text" autocomplete="off" maxlength="80" placeholder="Enter a room code" />
+          </label>
+          <button class="online-button online-button--secondary" id="join-room" type="button">Join room</button>
+        </div>
+        <div class="invite-details" id="invite-details" hidden>
+          <label class="room-entry">
+            <span>Share this invite link</span>
+            <input id="invite-link" type="text" readonly />
+          </label>
+          <button class="online-button online-button--secondary" id="copy-invite" type="button">Copy link</button>
+        </div>
+        <div class="approval-panel" id="approval-panel" hidden>
+          <p id="approval-message"></p>
+          <button class="online-button" id="allow-player" type="button">Allow player</button>
+          <button class="online-button online-button--secondary" id="deny-player" type="button">Deny</button>
+        </div>
+        <p class="connection-status" id="connection-status" role="status" aria-live="polite">
+          Online games need an internet connection and a site hosted over HTTPS.
+        </p>
+      </section>
+
+      <section class="game-area" aria-label="Rock, Paper, Scissors, Lizard, Spock game">
+        <p class="round-timer" id="round-timer" aria-live="polite" hidden></p>
+        <div class="choice-board" id="choice-board" aria-label="Choose your move">
+          <button class="choice choice--scissors" type="button" data-choice="scissors" aria-label="Choose scissors">
+            <img src="./images/icon-scissors.svg" alt="" />
+          </button>
+          <button class="choice choice--paper" type="button" data-choice="paper" aria-label="Choose paper">
+            <img src="./images/icon-paper.svg" alt="" />
+          </button>
+          <button class="choice choice--rock" type="button" data-choice="rock" aria-label="Choose rock">
+            <img src="./images/icon-rock.svg" alt="" />
+          </button>
+          <button class="choice choice--lizard" type="button" data-choice="lizard" aria-label="Choose lizard">
+            <img src="./images/icon-lizard.svg" alt="" />
+          </button>
+          <button class="choice choice--spock" type="button" data-choice="spock" aria-label="Choose Spock">
+            <img src="./images/icon-spock.svg" alt="" />
+          </button>
+        </div>
+
+        <section class="round-result" id="round-result" aria-live="polite" hidden>
+          <div class="result-side result-side--player">
+            <h1 id="player-heading">You picked</h1>
+            <div class="result-choice" id="player-choice"></div>
+          </div>
+          <div class="result-message" id="result-message" aria-atomic="true">
+            <p id="result-title">You win</p>
+            <button class="play-again" id="play-again" type="button">Play again</button>
+          </div>
+          <div class="result-side result-side--house">
+            <h2 id="opponent-heading">The house picked</h2>
+            <div class="result-choice" id="house-choice">
+              <div class="choice-placeholder" aria-label="The house is choosing"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <button class="rules-button" id="open-rules" type="button">Rules</button>
+      <p class="game-announcement" id="game-announcement" role="status" aria-live="polite"></p>
+    </main>
+
+    <dialog class="rules-dialog" id="rules-dialog" aria-labelledby="rules-title">
+      <h2 id="rules-title">Rules</h2>
+      <img src="./images/image-rules-bonus.svg" alt="Scissors beats paper and lizard; paper beats rock and Spock; rock beats lizard and scissors; lizard beats Spock and paper; Spock beats scissors and rock." />
+      <button class="close-rules" id="close-rules" type="button" aria-label="Close rules">
+        <img src="./images/icon-close.svg" alt="" />
+      </button>
+    </dialog>
+  </body>
+</html>
