@@ -7,6 +7,19 @@ const defeats = {
   spock: ["scissors", "rock"],
 };
 const scoreKey = "rpsls-score";
+const outcomeSounds = {
+  win: new Audio("./Sound/win-sound.mp3"),
+  lose: new Audio("./Sound/lose-sound.mp3"),
+  draw: new Audio("./Sound/tie-sound.mp3"),
+};
+const fallbackTones = {
+  win: [523.25, 659.25, 783.99],
+  lose: [392, 329.63, 261.63],
+  draw: [440, 440],
+};
+Object.values(outcomeSounds).forEach((sound) => {
+  sound.preload = "auto";
+});
 
 const scoreOutput = document.querySelector("#score");
 const scoreLabel = document.querySelector("#score-label");
@@ -37,6 +50,63 @@ const rulesDialog = document.querySelector("#rules-dialog");
 const openRulesButton = document.querySelector("#open-rules");
 const closeRulesButton = document.querySelector("#close-rules");
 const gameAnnouncement = document.querySelector("#game-announcement");
+
+let audioContext = null;
+
+function unlockAudio() {
+  if (!window.AudioContext) return;
+
+  try {
+    if (audioContext === null || audioContext.state === "closed") {
+      audioContext = new window.AudioContext();
+    }
+    if (audioContext.state === "suspended") {
+      audioContext.resume().catch((error) => console.warn("Fallback game audio could not be enabled.", error));
+    }
+  } catch (error) {
+    console.warn("Fallback game audio could not be enabled.", error);
+  }
+}
+
+function playFallbackTone(outcome) {
+  if (!window.AudioContext) return;
+  unlockAudio();
+  if (!audioContext || audioContext.state !== "running") return;
+
+  const frequencies = fallbackTones[outcome];
+  const interval = outcome === "draw" ? 0.18 : outcome === "win" ? 0.11 : 0.14;
+  const duration = outcome === "draw" ? 0.12 : outcome === "win" ? 0.2 : 0.24;
+  const startTime = audioContext.currentTime + 0.01;
+  frequencies.forEach((frequency, index) => {
+    const start = startTime + index * interval;
+    const oscillator = audioContext.createOscillator();
+    const volume = audioContext.createGain();
+    oscillator.type = outcome === "draw" ? "sine" : "triangle";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    volume.gain.setValueAtTime(0.0001, start);
+    volume.gain.exponentialRampToValueAtTime(0.12, start + 0.015);
+    volume.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(volume);
+    volume.connect(audioContext.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration);
+  });
+}
+
+function playOutcomeSound(outcome) {
+  const sound = outcomeSounds[outcome];
+  if (!sound) return;
+
+  if (sound.error) {
+    playFallbackTone(outcome);
+    return;
+  }
+  sound.currentTime = 0;
+  sound.play().catch((error) => {
+    console.warn(`The ${outcome} sound could not be played. Using its fallback tone.`, error);
+    playFallbackTone(outcome);
+  });
+}
 
 function readScore() {
   const storedScore = window.localStorage.getItem(scoreKey);
@@ -184,6 +254,7 @@ function playComputerRound(playerPick) {
   computerRoundTimer = window.setTimeout(() => {
     computerRoundTimer = null;
     if (mode !== "computer") return;
+    playOutcomeSound(outcome);
     houseChoice.replaceChildren(choiceButton(housePick));
     resultTitle.textContent = outcome === "draw"
       ? "Draw"
@@ -238,6 +309,7 @@ function playLocalRound(playerPick) {
     : defeats[playerTwoPick].includes(localFirstPick)
       ? "win"
       : "lose";
+  playOutcomeSound(outcome);
   if (outcome === "win") localScores[1] += 1;
   if (outcome === "lose") localScores[0] += 1;
   updateScore();
@@ -378,6 +450,7 @@ function showOnlineResult(result) {
       : result.hostOutcome === "win"
         ? "lose"
         : "win";
+  playOutcomeSound(ownOutcome);
   const ownRole = onlineRole;
   const ownTimedOut = result.timedOutPlayers.includes(ownRole);
   const opponentTimedOut = result.timedOutPlayers.includes(ownRole === "host" ? "guest" : "host");
@@ -741,6 +814,9 @@ gameAnnouncement.textContent = scorePersistenceWarning;
 modeButtons.forEach((button) => {
   button.addEventListener("click", () => setMode(button.dataset.mode));
 });
+
+document.addEventListener("pointerdown", unlockAudio, { once: true });
+document.addEventListener("keydown", unlockAudio, { once: true });
 
 choiceBoard.addEventListener("click", (event) => {
   const button = event.target.closest("[data-choice]");
